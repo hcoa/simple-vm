@@ -111,3 +111,74 @@ impl<'a> Vm<'a> {
         }
     }
 }
+
+// ------ vm tests
+
+#[cfg(test)]
+mod tests {
+    use crate::vm::parser::{parse_instructions, Constant, Register};
+
+    use super::Vm;
+
+    #[test]
+    fn test_mov() {
+        let instructions = parse_instructions(vec!["mov a 1", "mov b a"]).unwrap();
+        let a = Register::of("a".to_string());
+        let b = Register::of("b".to_string());
+
+        let mut vm = Vm::of(&instructions);
+        vm.interpret(0);
+        assert_eq!(vm.pc, 2);
+        assert_eq!(*vm.registers.get(&a).unwrap(), Constant::of(1));
+        assert_eq!(*vm.registers.get(&b).unwrap(), Constant::of(1));
+    }
+
+    #[test]
+    fn test_add() {
+        let instructions = parse_instructions(vec!["mov a 1", "mov b a", "add a b"]).unwrap();
+        let a = Register::of("a".to_string());
+        let b = Register::of("b".to_string());
+
+        let mut vm = Vm::of(&instructions);
+        vm.interpret(0);
+        assert_eq!(vm.pc, 3);
+        assert_eq!(*vm.registers.get(&a).unwrap(), Constant::of(2));
+        assert_eq!(*vm.registers.get(&b).unwrap(), Constant::of(1));
+    }
+
+    // TODO add buffer for printing in vm
+    // #[test]
+    // fn check_print() {
+    // }
+
+    #[test]
+    fn test_jump() {
+        let instructions =
+            parse_instructions(vec!["mov a 1", "mov b a", "jnz b 2", "add a b", "mov c 0"])
+                .unwrap();
+        let a = Register::of("a".to_string());
+        let b = Register::of("b".to_string());
+        let c = Register::of("c".to_string());
+
+        let mut vm = Vm::of(&instructions);
+        vm.interpret(0);
+        assert_eq!(vm.pc, 5);
+        assert_eq!(*vm.registers.get(&a).unwrap(), Constant::of(1));
+        assert_eq!(*vm.registers.get(&b).unwrap(), Constant::of(1));
+        assert_eq!(*vm.registers.get(&c).unwrap(), Constant::of(0));
+    }
+
+    #[test]
+    fn test_backward_jump() {
+        let instructions =
+            parse_instructions(vec!["mov a 2", "mov b -1", "add a b", "jnz a -1"]).unwrap();
+
+        let a = Register::of("a".to_string());
+        let b = Register::of("b".to_string());
+        let mut vm = Vm::of(&instructions);
+        vm.interpret(0);
+        assert_eq!(vm.pc, 4);
+        assert_eq!(*vm.registers.get(&a).unwrap(), Constant::of(0));
+        assert_eq!(*vm.registers.get(&b).unwrap(), Constant::of(-1));
+    }
+}

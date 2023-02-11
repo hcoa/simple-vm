@@ -14,7 +14,6 @@ fn main() {
     let content = read_to_string(file_name).expect("Failed to read a file");
 
     let parts = content
-        .as_str()
         .split('\n')
         .map(|ch| ch.trim())
         .collect::<Vec<&str>>();
@@ -34,7 +33,6 @@ fn super_quick_parse_exec_test() {
         "print a",
     ];
 
-    // parse_exec(instructions);
     let instructions = vm::parser::parse_instructions(instructions).unwrap();
     let mut vm = vm::Vm::of(&instructions);
     vm.interpret(0);
