@@ -4,18 +4,18 @@ use std::collections::HashMap;
 
 use self::parser::{ConstOrReg, Constant, Instruction, Register};
 
-pub struct Vm<'a> {
+pub struct Vm {
     registers: HashMap<Register, Constant>,
-    instructions: &'a [Instruction],
     pc: usize,
+    max_len: usize,
 }
 
-impl<'a> Vm<'a> {
-    pub fn of(instructions: &'a [Instruction]) -> Self {
+impl Vm {
+    pub fn new() -> Self {
         Vm {
             registers: HashMap::new(),
-            instructions,
             pc: 0,
+            max_len: 0,
         }
     }
 
@@ -86,16 +86,17 @@ impl<'a> Vm<'a> {
             self.pc.checked_add(jump.abs() as usize)
         }
         .expect(format!("Could not jump {}", jump).as_str());
-        if new_pc > self.instructions.len() {
+        if new_pc > self.max_len {
             panic!("Trying to jump too far");
         }
         self.pc = new_pc;
     }
 
-    pub fn interpret(&mut self, start_pc: usize) {
+    pub fn interpret(&mut self, instructions: &[Instruction], start_pc: usize) {
         self.pc = start_pc;
+        self.max_len = instructions.len();
         loop {
-            if let Some(instruction) = self.instructions.get(self.pc) {
+            if let Some(instruction) = instructions.get(self.pc) {
                 match instruction {
                     Instruction::Add(x, y) => self.add(&x, &y),
                     Instruction::Mov(x, y) => match y {
@@ -116,9 +117,8 @@ impl<'a> Vm<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::vm::parser::{parse_instructions, Constant, Register};
-
     use super::Vm;
+    use crate::vm::parser::{parse_instructions, Constant, Register};
 
     #[test]
     fn test_mov() {
@@ -126,8 +126,8 @@ mod tests {
         let a = Register::of("a".to_string());
         let b = Register::of("b".to_string());
 
-        let mut vm = Vm::of(&instructions);
-        vm.interpret(0);
+        let mut vm = Vm::new();
+        vm.interpret(&instructions, 0);
         assert_eq!(vm.pc, 2);
         assert_eq!(*vm.registers.get(&a).unwrap(), Constant::of(1));
         assert_eq!(*vm.registers.get(&b).unwrap(), Constant::of(1));
@@ -139,8 +139,8 @@ mod tests {
         let a = Register::of("a".to_string());
         let b = Register::of("b".to_string());
 
-        let mut vm = Vm::of(&instructions);
-        vm.interpret(0);
+        let mut vm = Vm::new();
+        vm.interpret(&instructions, 0);
         assert_eq!(vm.pc, 3);
         assert_eq!(*vm.registers.get(&a).unwrap(), Constant::of(2));
         assert_eq!(*vm.registers.get(&b).unwrap(), Constant::of(1));
@@ -160,8 +160,8 @@ mod tests {
         let b = Register::of("b".to_string());
         let c = Register::of("c".to_string());
 
-        let mut vm = Vm::of(&instructions);
-        vm.interpret(0);
+        let mut vm = Vm::new();
+        vm.interpret(&instructions, 0);
         assert_eq!(vm.pc, 5);
         assert_eq!(*vm.registers.get(&a).unwrap(), Constant::of(1));
         assert_eq!(*vm.registers.get(&b).unwrap(), Constant::of(1));
@@ -175,8 +175,8 @@ mod tests {
 
         let a = Register::of("a".to_string());
         let b = Register::of("b".to_string());
-        let mut vm = Vm::of(&instructions);
-        vm.interpret(0);
+        let mut vm = Vm::new();
+        vm.interpret(&instructions, 0);
         assert_eq!(vm.pc, 4);
         assert_eq!(*vm.registers.get(&a).unwrap(), Constant::of(0));
         assert_eq!(*vm.registers.get(&b).unwrap(), Constant::of(-1));

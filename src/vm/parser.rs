@@ -82,9 +82,6 @@ impl Display for Constant {
     }
 }
 
-// encode all versions, then match,
-// have a wrapper for Register/Constant
-// parse.orElse
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstOrReg {
     Const(Constant),
@@ -160,7 +157,7 @@ pub fn parse_instructions(input: Vec<&str>) -> Result<Vec<Instruction>, ParseErr
                     "Not found instruction or wrong args on line {i}, error: {line}"
                 )))
             }
-            [] => return Result::Err(ParseError::EmptyLine),
+            [] => return Result::Err(ParseError::EmptyLine), //TODO maybe just continue
         };
     }
     Ok(instructions)

@@ -18,8 +18,8 @@ fn main() {
         .map(|ch| ch.trim())
         .collect::<Vec<&str>>();
     let instructions = parse_instructions(parts).unwrap();
-    let mut vm = vm::Vm::of(&instructions);
-    vm.interpret(0);
+    let mut vm = vm::Vm::new();
+    vm.interpret(&instructions, 0);
 }
 
 #[test]
@@ -34,6 +34,6 @@ fn super_quick_parse_exec_test() {
     ];
 
     let instructions = vm::parser::parse_instructions(instructions).unwrap();
-    let mut vm = vm::Vm::of(&instructions);
-    vm.interpret(0);
+    let mut vm = vm::Vm::new();
+    vm.interpret(&instructions, 0);
 }
