@@ -6,7 +6,7 @@ use self::parser::{ConstOrReg, Constant, Instruction, Register};
 
 pub struct Vm {
     registers: HashMap<Register, Constant>,
-    pc: usize, // program counter
+    pc: usize,      // program counter
     max_len: usize, // length of all instructions for interpretation
 }
 
@@ -44,7 +44,10 @@ impl Vm {
             }
             (None, Some(_)) => panic!("Register {} must be initialized on line: {}", x, line),
             (Some(_), None) => panic!("Register {} must be initialized on line: {}", y, line),
-            (None, None) => panic!("Both registers {} and {} must be initialized on line: {}", x, y, line),
+            (None, None) => panic!(
+                "Both registers {} and {} must be initialized on line: {}",
+                x, y, line
+            ),
         }
     }
 
@@ -77,7 +80,7 @@ impl Vm {
         let value = self.get_const_or_load(x);
         if value == Constant::ZERO {
             self.pc += 1;
-            return
+            return;
         }
         let jump = self.get_const_or_load(y);
 
@@ -113,8 +116,6 @@ impl Vm {
         }
     }
 }
-
-// ------ vm tests
 
 #[cfg(test)]
 mod tests {
