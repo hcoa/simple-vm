@@ -6,8 +6,8 @@ use self::parser::{ConstOrReg, Constant, Instruction, Register};
 
 pub struct Vm {
     registers: HashMap<Register, Constant>,
-    pc: usize,
-    max_len: usize,
+    pc: usize, // program counter
+    max_len: usize, // length of all instructions for interpretation
 }
 
 impl Vm {
@@ -35,13 +35,16 @@ impl Vm {
     }
 
     fn add(&mut self, x: &Register, y: &Register) {
+        let line = self.pc + 1;
         match (self.registers.get(x), self.registers.get(y)) {
             (Some(val_x), Some(val_y)) => {
                 let res: Constant = val_x.wrapping_add(**val_y).into();
                 self.registers.insert(x.clone(), res);
                 self.pc += 1;
             }
-            _ => panic!("One of the register's parameters is missing"),
+            (None, Some(_)) => panic!("Register {} must be initialized on line: {}", x, line),
+            (Some(_), None) => panic!("Register {} must be initialized on line: {}", y, line),
+            (None, None) => panic!("Both registers {} and {} must be initialized on line: {}", x, y, line),
         }
     }
 
@@ -60,27 +63,25 @@ impl Vm {
         }
     }
 
-    fn jumpz(&mut self, x: &ConstOrReg, y: &ConstOrReg) {
-        let value = match x {
-            ConstOrReg::Const(constant) => constant,
-            ConstOrReg::Reg(register) => &*self
+    fn get_const_or_load(&self, x: &ConstOrReg) -> Constant {
+        match x {
+            ConstOrReg::Const(constant) => *constant,
+            ConstOrReg::Reg(register) => *self
                 .registers
                 .get(&register)
                 .expect(format!("Rregister {register} must be initialized").as_str()),
-        };
-        if *value == Constant::ZERO {
-            self.pc += 1;
-            return;
         }
-        let jump = match y {
-            ConstOrReg::Const(constant) => constant,
-            ConstOrReg::Reg(reg) => &*self
-                .registers
-                .get(&reg)
-                .expect(format!("Register {reg} must be initialized").as_str()),
-        };
+    }
 
-        let new_pc = if *jump < Constant::ZERO {
+    fn jumpz(&mut self, x: &ConstOrReg, y: &ConstOrReg) {
+        let value = self.get_const_or_load(x);
+        if value == Constant::ZERO {
+            self.pc += 1;
+            return
+        }
+        let jump = self.get_const_or_load(y);
+
+        let new_pc = if jump < Constant::ZERO {
             self.pc.checked_sub(jump.abs() as usize)
         } else {
             self.pc.checked_add(jump.abs() as usize)
